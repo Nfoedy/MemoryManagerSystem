@@ -1,8 +1,9 @@
 #include "MemoryManager/MemoryManager.h"
+#include "MemoryManager/SmallObjectAllocator.h"
 
 #include <iostream>
 
-
+/*
 class Player
 {
 public:
@@ -20,7 +21,7 @@ private:
     int m_Hp;
 };
 
-
+*/
 
 int main()
 {
@@ -30,12 +31,24 @@ int main()
     //MM::Free(ptr1);    // Libera la memoria allocata in precedenza
     //MM::Free(ptr2);    // Libera la memoria allocata in precedenza
 
+    /*
     Player* p1 = MM_NEW(Player, 100); // Alloca memoria per un oggetto Player e lo costruisce con hp = 100
 
     MM_DELETE(p1); // Distrugge l'oggetto Player e libera la memoria associata
 
     MM::PrintStats();
     MM::DumpLeaks();
+    */
+
+    SmallObjectAllocator allocator(32, 10); // Crea un SmallObjectAllocator con blocchi di 32 byte e 10 blocchi totali
+
+    void* blocco1 = allocator.Allocate(); // Alloca un blocco di memoria dal SmallObjectAllocator
+    void* blocco2 = allocator.Allocate(); // Alloca un altro blocco di memoria dal SmallObjectAllocator
+
+    allocator.Free(blocco1); // Libera il primo blocco di memoria
+    allocator.Free(blocco2); // Libera il secondo blocco di memoria
+
+    std::cout << "SmallObjectAllocator test completato" << std::endl;
 
     return 0;   
 }
