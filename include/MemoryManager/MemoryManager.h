@@ -9,6 +9,7 @@ namespace MM
     void Free(void* ptr);       // Libera un blocco di memoria precedentemente allocato con Malloc
 
     void PrintStats();  // Stampa le statistiche base sull'utilizzo della memoria
+    void DumpLeaks();  // Stampa  perdite di memoria
 }
 
 

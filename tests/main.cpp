@@ -11,6 +11,7 @@ int main()
     MM::Free(ptr2);    // Libera la memoria allocata in precedenza
 
     MM::PrintStats();
-    
+    MM::DumpLeaks();
+
     return 0;   
 }
