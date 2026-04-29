@@ -1,6 +1,8 @@
 #pragma once
 
 #include <cstddef>  // per std::size_t
+#include <utility>  // per std::forward
+
 
 // Namespace perchè cosi evito conflitti con altre funzioni Malloc
 namespace MM
