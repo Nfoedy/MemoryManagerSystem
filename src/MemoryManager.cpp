@@ -7,22 +7,29 @@
 
 namespace MM
 {
+    struct AllocationInfo
+    {
+        size_t size; // Dimensione dell'allocazione
+        const char* file; // Nome del file in cui è stata effettuata l'allocazione
+        int line; // Numero di linea in cui è stata effettuata l'allocazione
+    };
+
 
     static std::size_t g_TotalAllocated = 0; // Variabile globale per tenere traccia della memoria totale allocata
     static std::size_t g_CurrentAllocated = 0; // Variabile globale per tenere traccia della memoria attualmente allocata
     static std::size_t g_AllocationCount = 0; // Variabile globale per tenere traccia del numero di allocazioni
     static std::size_t g_FreeCount = 0; // Variabile globale per tenere traccia del numero di deallocazioni
 
-    static std::unordered_map<void*, std::size_t> g_Allocations; // Mappa per tenere traccia delle allocazioni (puntatore -> dimensione)
+    static std::unordered_map<void*, AllocationInfo> g_Allocations; // Mappa per tenere traccia delle allocazioni (puntatore -> informazioni sull'allocazione)
 
 
-    void* Malloc(std::size_t size)
+    void* Malloc(std::size_t size, const char* file, int line)
     {
         void* ptr = std::malloc(size);   // Alloca memoria usando malloc
 
         if(ptr == nullptr)
         {
-            std::cout << "[MM] Allocation failed for " << size << " bytes at address " << ptr << std::endl; // Stampa un messaggio di errore se l'allocazione fallisce
+            std::cout << "[MM] Allocation failed for " << size << " bytes at " << file << ":" << line << std::endl; // Stampa un messaggio di errore se l'allocazione fallisce
             return nullptr;
         }
 
@@ -30,9 +37,14 @@ namespace MM
         g_CurrentAllocated += size; // Aggiorna la memoria attualmente allocata
         g_AllocationCount++; // Incrementa il contatore delle allocazioni
 
-        g_Allocations[ptr] = size; // Memorizza la dimensione dell'allocazione nella mappa
+        g_Allocations[ptr] = AllocationInfo
+        {
+            size, 
+            file, 
+            line
+        }; // Memorizza le informazioni sull'allocazione nella mappa
 
-        std::cout << "[MM] Allocating " << size << " bytes at address " << ptr << std::endl; // Allocazione di size nell'indirizzo ptr
+        std::cout << "[MM] Allocated " << size << " bytes at address " << ptr << " (" << file << " : " << line << " )" << std::endl; // Stampa un messaggio di debug con i dettagli dell'allocazione
 
         return ptr; // Restituisce il puntatore alla memoria allocata
     }
@@ -53,7 +65,8 @@ namespace MM
             return;
         }
 
-        std::size_t size = it->second; // Ottiene la dimensione dell'allocazione dalla mappa
+        std::size_t size = it->second.size; // Ottiene la dimensione dell'allocazione dalla mappa
+
         g_CurrentAllocated -= size; // Aggiorna la memoria attualmente allocata
         g_FreeCount++; // Incrementa il contatore delle deallocazioni
 
@@ -72,7 +85,7 @@ namespace MM
         std::cout << "Current Allocated: " << g_CurrentAllocated << " bytes" << std::endl; // Stampa la memoria attualmente allocata
         std::cout << "Allocation Count: " << g_AllocationCount << std::endl; // Stampa il numero di allocazioni
         std::cout << "Free Count: " << g_FreeCount << std::endl; // Stampa il numero di deallocazioni
-        std::cout << "Atctive Blocks: " << g_Allocations.size() << std::endl; // Stampa il numero di blocchi attivi (non ancora liberati)
+        std::cout << "Active Blocks: " << g_Allocations.size() << std::endl; // Stampa il numero di blocchi attivi (non ancora liberati)
     }
 
 
@@ -83,7 +96,6 @@ namespace MM
         if(g_Allocations.empty())
         {
             std::cout << "No memory leaks detected." << std::endl; // Stampa un messaggio se non sono state rilevate perdite di memoria
-            return;
         }
         else
         {
@@ -92,9 +104,15 @@ namespace MM
             // Stampa i dettagli di ogni perdita di memoria rilevata
             for (const auto& allocation : g_Allocations)
             {
-                std::cout << "- Leaked at " << allocation.first << " with size " << allocation.second << " bytes" << std::endl; 
+                const void* ptr = allocation.first; // Ottiene il puntatore alla memoria allocata
+                const AllocationInfo& info = allocation.second; // Ottiene le informazioni sull'allocazione
+
+                std::cout << " - Leaked " << ptr << " | Size " << info.size << " bytes " << " | Location " << info.file << ":" << info.line << std::endl; // Stampa i dettagli della perdita di memoria
             }
         }
+
+
+        std::cout << "===============================" << std::endl; 
 
     }
 
