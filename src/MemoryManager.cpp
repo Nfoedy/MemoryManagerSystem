@@ -1,4 +1,5 @@
 #include "MemoryManager/MemoryManager.h"
+#include "MemoryManager/SmallObjectAllocator.h"
 
 #include <cstdlib>  // per std::malloc e std::free
 #include <iostream> // per debug
@@ -22,10 +23,21 @@ namespace MM
 
     static std::unordered_map<void*, AllocationInfo> g_Allocations; // Mappa per tenere traccia delle allocazioni (puntatore -> informazioni sull'allocazione)
 
+    static SmallObjectAllocator g_SmallAllocator(64, 1000); // SmallObjectAllocator per gestire allocazioni di piccoli oggetti (blocchi di 64 byte, 1000 blocchi totali)
 
     void* Malloc(std::size_t size, const char* file, int line)
     {
         void* ptr = std::malloc(size);   // Alloca memoria usando malloc
+
+        // SmallObjectAllocator
+        if(size <= 64)
+        {
+            ptr = g_SmallAllocator.Allocate(); // Se la dimensione è inferiore o uguale a 64 byte, utilizza il SmallObjectAllocator 
+        }
+        else
+        {
+            ptr = std::malloc(size); // Altrimenti, utilizza malloc per allocare memoria
+        }
 
         if(ptr == nullptr)
         {
@@ -44,7 +56,17 @@ namespace MM
             line
         }; // Memorizza le informazioni sull'allocazione nella mappa
 
-        std::cout << "[MM] Allocated " << size << " bytes at address " << ptr << " (" << file << " : " << line << " )" << std::endl; // Stampa un messaggio di debug con i dettagli dell'allocazione
+        //std::cout << "[MM] Allocated " << size << " bytes at address " << ptr << " (" << file << " : " << line << " )" << std::endl; // Stampa un messaggio di debug con i dettagli dell'allocazione
+
+        if(size <= 64)
+        {
+            std::cout << "[MM] Pool Alloc " << size << " bytes at " << ptr << " (" << file << " : " << line << " )" << std::endl; // Stampa un messaggio di debug specifico per le allocazioni dal pool
+        }
+        else
+        {
+            std::cout << "[MM] Heap Alloc " << size << " bytes at " << ptr << " (" << file << " : " << line << " )" << std::endl; // Stampa un messaggio di debug per le allocazioni standard
+        }
+
 
         return ptr; // Restituisce il puntatore alla memoria allocata
     }
@@ -67,6 +89,17 @@ namespace MM
 
         std::size_t size = it->second.size; // Ottiene la dimensione dell'allocazione dalla mappa
 
+        // SmallObjectAllocator
+        if(size <= 64)
+        {
+            g_SmallAllocator.Free(ptr); // Se la dimensione è inferiore o uguale a 64 byte, utilizza il SmallObjectAllocator per liberare la memoria
+        }
+        else
+        {
+            std::free(ptr); // Altrimenti, utilizza free per liberare la memoria
+        }
+
+
         g_CurrentAllocated -= size; // Aggiorna la memoria attualmente allocata
         g_FreeCount++; // Incrementa il contatore delle deallocazioni
 
@@ -74,7 +107,16 @@ namespace MM
 
         std::free(ptr); // Libera la memoria usando free
         
-        std::cout << "[MM] Freeing memory at address " << ptr << std::endl; // Libera la memoria all'indirizzo ptr
+        //std::cout << "[MM] Freeing memory at address " << ptr << std::endl; // Libera la memoria all'indirizzo ptr
+
+        if(size <= 64)
+        {
+            std::cout << "[MM] Pool Free " << size << " bytes at " << ptr << std::endl; // Stampa un messaggio di debug specifico per le deallocazioni dal pool
+        }
+        else
+        {
+            std::cout << "[MM] Heap Free " << size << " bytes at " << ptr << std::endl; // Stampa un messaggio di debug per le deallocazioni standard
+        }
     }
 
 

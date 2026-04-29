@@ -40,6 +40,7 @@ int main()
     MM::DumpLeaks();
     */
 
+    /*
     SmallObjectAllocator allocator(32, 10); // Crea un SmallObjectAllocator con blocchi di 32 byte e 10 blocchi totali
 
     void* blocco1 = allocator.Allocate(); // Alloca un blocco di memoria dal SmallObjectAllocator
@@ -49,6 +50,13 @@ int main()
     allocator.Free(blocco2); // Libera il secondo blocco di memoria
 
     std::cout << "SmallObjectAllocator test completato" << std::endl;
+    */
+
+    void* a = MM_MALLOC(32);   // Pool
+    void* b = MM_MALLOC(128);  // Heap
+
+    MM_FREE(a);
+    MM_FREE(b);
 
     return 0;   
 }
