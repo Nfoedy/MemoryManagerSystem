@@ -1,69 +1,79 @@
-# Prerequisites
-*.d
-
-# Compiled Object files
-*.slo
-*.lo
+# =========================
+# BUILD FILES
+# =========================
+build/
+bin/
+obj/
+out/
 *.o
 *.obj
-
-# Precompiled Headers
-*.gch
-*.pch
-
-# Linker files
-*.ilk
-
-# Debugger Files
-*.pdb
-
-# Compiled Dynamic libraries
-*.so
-*.dylib
-*.dll
-*.so.*
-
-
-# Fortran module files
-*.mod
-*.smod
-
-# Compiled Static libraries
-*.lai
-*.la
-*.a
-*.lib
-
-# Executables
 *.exe
 *.out
 *.app
 
-# Build directories
-build/
-Build/
-build-*/
-
-# CMake generated files
+# CMake
 CMakeFiles/
 CMakeCache.txt
-cmake_install.cmake
-Makefile
-install_manifest.txt
+cmake-build-*/
 compile_commands.json
+Makefile
 
-# Temporary files
-*.tmp
+# =========================
+# DEBUG / TEMP FILES
+# =========================
 *.log
-*.bak
-*.swp
+*.tmp
+*.temp
+*.cache
 
+# =========================
+# VS CODE
+# =========================
+.vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+
+# =========================
+# OS FILES
+# =========================
+.DS_Store
+Thumbs.db
+
+# =========================
+# LIBS / BINARIES
+# =========================
+*.a
+*.lib
+*.dll
+*.so
+*.dylib
+
+# =========================
+# TEST OUTPUT
+# =========================
+*.gcda
+*.gcno
+*.gcov
+
+# =========================
+# PACKAGE MANAGERS
+# =========================
 # vcpkg
 vcpkg_installed/
 
-# debug information files
-*.dwo
+# Conan
+conanbuildinfo.*
+conaninfo.txt
 
-# test output & cache
-Testing/
-.cache/
+# =========================
+# USER SPECIFIC
+# =========================
+*.user
+*.suo
+
+# =========================
+# OPTIONAL (SE VUOI TENERE CONFIG VS CODE)
+# =========================
+# Commenta questa riga se vuoi salvare la config VSCode nel repo
+# .vscode/
