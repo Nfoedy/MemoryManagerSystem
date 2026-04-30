@@ -22,7 +22,7 @@ void* operator new(size_t size)
 }
 
 
-// Override globale dell'operatore delete. Da ora in poi quando si scrive "delete ... " il programma passera da questa funzione
+// Override globale dell'operatore delete classico. Da ora in poi quando si scrive "delete ... " il programma passera da questa funzione
 void operator delete(void* ptr) noexcept
 {
     // Se il puntatore è nullo non fa nulla
@@ -48,9 +48,12 @@ void operator delete(void* ptr) noexcept
 }
 
 
-// Override globale dell'operatore delete. Da ora in poi quando si scrive "delete ... " il programma passera da questa funzione
+// Override globale dell'operatore delete con size. Da ora in poi quando si scrive "delete ... " il programma passera da questa funzione
 void operator delete(void* ptr, size_t size) noexcept
 {
+
+    (void)size; // In questa implementazione la size non ci serve, perchè il MM recupera la dim dalla mappa delle allocazioni
+
     // Se il puntatore è nullo non fa nulla
     if(ptr == nullptr)
     {

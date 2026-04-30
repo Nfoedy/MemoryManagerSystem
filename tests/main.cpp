@@ -61,15 +61,19 @@ int main()
 
     */
    
-        
-    int* x = new int(10);    //Allocazione che usa new standard, grazie all'override passa dal MM
 
-    std::cout << "Valore x: " << *x << std::endl;   // Stampa il valore per debug
+    // TEST GENERAL ALLOCATOR
 
-    delete x; // delete standar, grazie all'override passa dal MM
+    // Small
+    int* x = (int*)MM_MALLOC(4);
+
+    // General
+    void* y = MM_MALLOC(128);
+
+    MM_FREE(x);
+    MM_FREE(y);
 
     MM::PrintStats();   // Stampa le caratteristiche
-
     MM::DumpLeaks();    // Controlla evenetuali leak
 
     return 0;

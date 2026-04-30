@@ -20,10 +20,10 @@
 SmallObjectAllocator::SmallObjectAllocator(size_t blockSize, size_t blockCount)
     : m_BlockSize(blockSize), m_BlockCount(blockCount)
 {
-    m_Memory = std::malloc(blockSize * blockCount); // Alloca un blocco di memoria per tutti i blocchi
+    m_Memory = std::malloc(blockSize * blockCount); // Alloca un unico blocco di memoria che verrà suddiviso in blocchi più piccoli
 
     // Costuizione Free List
-    char* current = (char*)m_Memory; // Puntatore corrente alla memoria allocata
+    char* current = (char*)m_Memory; // Puntatore al blocco corrente
 
     for (size_t i = 0; i < blockCount - 1; ++i)
     {
@@ -32,9 +32,9 @@ SmallObjectAllocator::SmallObjectAllocator(size_t blockSize, size_t blockCount)
         current = next; // Sposta il puntatore corrente al blocco successivo
     }
 
-    *(void**)current = nullptr; // L'ultimo blocco punta a nullptr
+    *(void**)current = nullptr; // L'ultimo blocco punta a nullptr (fine della lista)
 
-    m_FreeList = m_Memory; // Inizializza la lista libera con il primo blocco
+    m_FreeList = m_Memory; // La Free List inizialmente parte dal primo blocco
 }
 
 
@@ -42,10 +42,11 @@ void* SmallObjectAllocator::Allocate()
 {
     if(!m_FreeList)
     {
-        return nullptr; // Se la lista libera è vuota, restituisce nullptr
+        return nullptr; // Se la lista libera è vuota, restituisce nullptr, cioè non ci sono blocchi disponibili
     }
 
     void* block = m_FreeList; // Prende il primo blocco dalla lista libera
+
     m_FreeList = *(void**)m_FreeList; // Aggiorna la lista libera al blocco successivo
     
     return block; // Restituisce il blocco allocato
@@ -61,6 +62,6 @@ void SmallObjectAllocator::Free(void* ptr)
 // Destructor 
 SmallObjectAllocator::~SmallObjectAllocator()
 {
-    std::free(m_Memory); // Libera la memoria allocata
+    std::free(m_Memory); // Libera il grande blocco di memoria allocato nel costruttore 
 }
 

@@ -1,47 +1,73 @@
 #include "MemoryManager/MemoryManager.h"
 #include "MemoryManager/SmallObjectAllocator.h"
+#include "MemoryManager/GeneralAllocator.h"
 
-#include <cstdlib>  // per std::malloc e std::free
 #include <iostream> // per debug
 #include <unordered_map> // per tenere traccia delle allocazioni
 
 
 namespace MM
 {
-    struct AllocationInfo
+    namespace
     {
-        size_t size; // Dimensione dell'allocazione
-        const char* file; // Nome del file in cui è stata effettuata l'allocazione
-        int line; // Numero di linea in cui è stata effettuata l'allocazione
-    };
+        // Struttura che contiene le info relative ad una signola allocazione
+        struct AllocationInfo
+        {
+            size_t size; // Dimensione dell'allocazione
+            const char* file; // Nome del file in cui è stata effettuata l'allocazione
+            int line; // Numero di linea in cui è stata effettuata l'allocazione
+        };
 
+        // Parametri per lo SmallObjectAllocator 
+        static constexpr std::size_t SMALL_ALLOCATION_THRESHOLD = 64;      // Dimensione massima per usare il pool
+        static constexpr std::size_t SMALL_ALLOCATION_BLOCK_COUNT = 1000;    // Numero di blocchi del pool
 
-    static std::size_t g_TotalAllocated = 0; // Variabile globale per tenere traccia della memoria totale allocata
-    static std::size_t g_CurrentAllocated = 0; // Variabile globale per tenere traccia della memoria attualmente allocata
-    static std::size_t g_AllocationCount = 0; // Variabile globale per tenere traccia del numero di allocazioni
-    static std::size_t g_FreeCount = 0; // Variabile globale per tenere traccia del numero di deallocazioni
+        // Statistiche globali del MemomryManager
+        static std::size_t g_TotalAllocated = 0; // Variabile globale per tenere traccia della memoria totale allocata
+        static std::size_t g_CurrentAllocated = 0; // Variabile globale per tenere traccia della memoria attualmente allocata
+        static std::size_t g_AllocationCount = 0; // Variabile globale per tenere traccia del numero di allocazioni
+        static std::size_t g_FreeCount = 0; // Variabile globale per tenere traccia del numero di deallocazioni
 
-    static std::unordered_map<void*, AllocationInfo> g_Allocations; // Mappa per tenere traccia delle allocazioni (puntatore -> informazioni sull'allocazione)
+        static std::unordered_map<void*, AllocationInfo> g_Allocations; // Mappa per tenere traccia delle allocazioni (puntatore -> informazioni sull'allocazione)
+    
+        SmallObjectAllocator g_SmallAllocator(SMALL_ALLOCATION_THRESHOLD, SMALL_ALLOCATION_BLOCK_COUNT); // SmallObjectAllocator per gestire allocazioni di piccoli oggetti (blocchi di 64 byte, 1000 blocchi totali)
+        GeneralAllocator g_GeneralAllocator;   // Variabile per gestire tutte le allocazioni che non vengono gestite dallo SmallObjAllocator
 
-    static SmallObjectAllocator g_SmallAllocator(64, 1000); // SmallObjectAllocator per gestire allocazioni di piccoli oggetti (blocchi di 64 byte, 1000 blocchi totali)
+        // Restituisce il nome dell'allocatore usato
+        const char* GetAllocatorName(bool isSmallAllocation)
+        {
+            return isSmallAllocation ? "Pool" : "General";
+        }
+    }
+    
 
     void* Malloc(std::size_t size, const char* file, int line)
     {
-        void* ptr = std::malloc(size);   // Alloca memoria usando malloc
 
-        // SmallObjectAllocator
-        if(size <= 64)
+        // Controllo di sicurezza: allocare 0 byte è sospetto, quindi va segnalato
+        if(size == 0)
         {
-            ptr = g_SmallAllocator.Allocate(); // Se la dimensione è inferiore o uguale a 64 byte, utilizza il SmallObjectAllocator 
+            std::cout << "[MM][Warning] Requested allocation of 0 bytes at " << file << " : " << line << std::endl;
+        }
+
+        const bool isSmallAllocation = size <= SMALL_ALLOCATION_THRESHOLD;      // Controllo in base alla dimensione richiesta
+
+        void* ptr = nullptr;    // Puntatore che conterrà l'indirizzo di memoria allocata     
+
+        // SmallObjectAllocator o GeneralAllocator
+        if(isSmallAllocation)
+        {
+            ptr = g_SmallAllocator.Allocate(); // Se la dimensione è inferiore o uguale a THRESHOLD, utilizza il SmallObjectAllocator 
         }
         else
         {
-            ptr = std::malloc(size); // Altrimenti, utilizza malloc per allocare memoria
+            ptr = g_GeneralAllocator.Allocate(size); // Se la memoria è > THRESHOLD utilizziamo il GeneralAllocator
         }
 
+        // Stampa un messaggio di errore se l'allocazione fallisce 
         if(ptr == nullptr)
         {
-            std::cout << "[MM] Allocation failed for " << size << " bytes at " << file << ":" << line << std::endl; // Stampa un messaggio di errore se l'allocazione fallisce
+            std::cout << "[MM][Error] Allocation failed for " << size << " bytes at " << file << ":" << line << std::endl; 
             return nullptr;
         }
 
@@ -49,31 +75,26 @@ namespace MM
         g_CurrentAllocated += size; // Aggiorna la memoria attualmente allocata
         g_AllocationCount++; // Incrementa il contatore delle allocazioni
 
+        // Memorizza le informazioni dell'allocazione nella mappa
         g_Allocations[ptr] = AllocationInfo
         {
             size, 
             file, 
             line
-        }; // Memorizza le informazioni sull'allocazione nella mappa
+        }; 
 
-        //std::cout << "[MM] Allocated " << size << " bytes at address " << ptr << " (" << file << " : " << line << " )" << std::endl; // Stampa un messaggio di debug con i dettagli dell'allocazione
-
-        if(size <= 64)
-        {
-            std::cout << "[MM] Pool Alloc " << size << " bytes at " << ptr << " (" << file << " : " << line << " )" << std::endl; // Stampa un messaggio di debug specifico per le allocazioni dal pool
-        }
-        else
-        {
-            std::cout << "[MM] Heap Alloc " << size << " bytes at " << ptr << " (" << file << " : " << line << " )" << std::endl; // Stampa un messaggio di debug per le allocazioni standard
-        }
-
+        // Log debug con nome dell'allocatore usato, dimensione, indirizzo e posizione nel codice
+        std::cout << "[MM][" << GetAllocatorName(isSmallAllocation) << "] Allocated " << size << " bytes | Address : " << ptr << " | Location : "
+        << file << " : " << line << std::endl; 
 
         return ptr; // Restituisce il puntatore alla memoria allocata
     }
 
 
+
     void Free(void* ptr)
     {
+        // free(nullptr) è valido : non fa nulla
         if(ptr == nullptr)
         {
             return;
@@ -81,59 +102,52 @@ namespace MM
 
         auto it = g_Allocations.find(ptr); // Cerca il puntatore nella mappa delle allocazioni
 
+        // Stampa un messaggio di avviso se si tenta di liberare memoria non allocata
         if(it == g_Allocations.end())
         {
-            std::cout << "[MM] Warning: try to free unallocated memory at address " << ptr << std::endl; // Stampa un messaggio di avviso se si tenta di liberare memoria non allocata
+            std::cout << "[MM][Warning] Attemped to free unknown pointer | Address: " << ptr << std::endl; 
             return;
         }
 
         std::size_t size = it->second.size; // Ottiene la dimensione dell'allocazione dalla mappa
 
-        // SmallObjectAllocator
-        if(size <= 64)
-        {
-            g_SmallAllocator.Free(ptr); // Se la dimensione è inferiore o uguale a 64 byte, utilizza il SmallObjectAllocator per liberare la memoria
-        }
-        else
-        {
-            std::free(ptr); // Altrimenti, utilizza free per liberare la memoria
-        }
-
+        const bool isSmallAllocation = size <= SMALL_ALLOCATION_THRESHOLD;  // Determina quale allocatore deve gestire la deallocazione
 
         g_CurrentAllocated -= size; // Aggiorna la memoria attualmente allocata
         g_FreeCount++; // Incrementa il contatore delle deallocazioni
 
         g_Allocations.erase(it); // Rimuove l'allocazione dalla mappa
-
-        std::free(ptr); // Libera la memoria usando free
         
-        //std::cout << "[MM] Freeing memory at address " << ptr << std::endl; // Libera la memoria all'indirizzo ptr
-
-        if(size <= 64)
+        // SmallObjectAllocator o GeneralAllocator
+        if(isSmallAllocation)
         {
-            std::cout << "[MM] Pool Free " << size << " bytes at " << ptr << std::endl; // Stampa un messaggio di debug specifico per le deallocazioni dal pool
+            g_SmallAllocator.Free(ptr); // Se la dimensione è inferiore, utilizza il SmallObjectAllocator per liberare la memoria
         }
         else
         {
-            std::cout << "[MM] Heap Free " << size << " bytes at " << ptr << std::endl; // Stampa un messaggio di debug per le deallocazioni standard
+            g_GeneralAllocator.Free(ptr); // Altrimenti, utilizza il General Allocator per liberare la memoria
         }
+
+        // Log debug della deallocazione
+        std::cout << "[MM][" << GetAllocatorName(isSmallAllocation) << "] | Freed " << size << " bytes | Address : " << ptr << std::endl;
     }
 
 
     void PrintStats()
     {
-        std::cout << "[MM] Memory Manager Stats: " << std::endl;
+        std::cout << "\n========= MEMORY MANAGER STATS =========\n";
         std::cout << "Total Allocated: " << g_TotalAllocated << " bytes" << std::endl; // Stampa la memoria totale allocata
         std::cout << "Current Allocated: " << g_CurrentAllocated << " bytes" << std::endl; // Stampa la memoria attualmente allocata
         std::cout << "Allocation Count: " << g_AllocationCount << std::endl; // Stampa il numero di allocazioni
         std::cout << "Free Count: " << g_FreeCount << std::endl; // Stampa il numero di deallocazioni
         std::cout << "Active Blocks: " << g_Allocations.size() << std::endl; // Stampa il numero di blocchi attivi (non ancora liberati)
+        std::cout << "==========================================\n" << std::endl;
     }
 
 
     void DumpLeaks()
     {
-        std::cout << "[MM] Memory Leaks: " << std::endl;
+        std::cout << "\n========= MEMORY LEAK REPORT =========\n";
 
         if(g_Allocations.empty())
         {
@@ -143,13 +157,12 @@ namespace MM
         {
             std::cout << "Memory leaks detected: " << std::endl; 
 
-            // Stampa i dettagli di ogni perdita di memoria rilevata
-            for (const auto& allocation : g_Allocations)
+            // Ogni elemento della mappa contiene
+            // ptr --> indirizzo della memoria allocata
+            // info --> informazioni dell'allocazione
+            for (const auto& [ptr, info ] : g_Allocations)
             {
-                const void* ptr = allocation.first; // Ottiene il puntatore alla memoria allocata
-                const AllocationInfo& info = allocation.second; // Ottiene le informazioni sull'allocazione
-
-                std::cout << " - Leaked " << ptr << " | Size " << info.size << " bytes " << " | Location " << info.file << ":" << info.line << std::endl; // Stampa i dettagli della perdita di memoria
+                std::cout << "-- Address: " << ptr << " | Size : " << info.size << " bytes | Location: " << info.file << " : " << info.line << std::endl;
             }
         }
 
