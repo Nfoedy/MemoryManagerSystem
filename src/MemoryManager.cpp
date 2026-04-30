@@ -1,23 +1,16 @@
 #include "MemoryManager/MemoryManager.h"
 #include "MemoryManager/SmallObjectAllocator.h"
 #include "MemoryManager/GeneralAllocator.h"
+#include "MemoryManager/MemoryTracker.h"
 
 #include <iostream> // per debug
-#include <unordered_map> // per tenere traccia delle allocazioni
+#include <cstddef>
 
 
 namespace MM
 {
     namespace
     {
-        // Struttura che contiene le info relative ad una signola allocazione
-        struct AllocationInfo
-        {
-            size_t size; // Dimensione dell'allocazione
-            const char* file; // Nome del file in cui è stata effettuata l'allocazione
-            int line; // Numero di linea in cui è stata effettuata l'allocazione
-        };
-
         // Parametri per lo SmallObjectAllocator 
         static constexpr std::size_t SMALL_ALLOCATION_THRESHOLD = 64;      // Dimensione massima per usare il pool
         static constexpr std::size_t SMALL_ALLOCATION_BLOCK_COUNT = 1000;    // Numero di blocchi del pool
@@ -27,11 +20,10 @@ namespace MM
         static std::size_t g_CurrentAllocated = 0; // Variabile globale per tenere traccia della memoria attualmente allocata
         static std::size_t g_AllocationCount = 0; // Variabile globale per tenere traccia del numero di allocazioni
         static std::size_t g_FreeCount = 0; // Variabile globale per tenere traccia del numero di deallocazioni
-
-        static std::unordered_map<void*, AllocationInfo> g_Allocations; // Mappa per tenere traccia delle allocazioni (puntatore -> informazioni sull'allocazione)
     
         SmallObjectAllocator g_SmallAllocator(SMALL_ALLOCATION_THRESHOLD, SMALL_ALLOCATION_BLOCK_COUNT); // SmallObjectAllocator per gestire allocazioni di piccoli oggetti (blocchi di 64 byte, 1000 blocchi totali)
         GeneralAllocator g_GeneralAllocator;   // Variabile per gestire tutte le allocazioni che non vengono gestite dallo SmallObjAllocator
+        MemoryTracker g_MemoryTracker;    // Oggetto resposabile del tracking delle allocazioni attive
 
         // Restituisce il nome dell'allocatore usato
         const char* GetAllocatorName(bool isSmallAllocation)
@@ -75,13 +67,8 @@ namespace MM
         g_CurrentAllocated += size; // Aggiorna la memoria attualmente allocata
         g_AllocationCount++; // Incrementa il contatore delle allocazioni
 
-        // Memorizza le informazioni dell'allocazione nella mappa
-        g_Allocations[ptr] = AllocationInfo
-        {
-            size, 
-            file, 
-            line
-        }; 
+
+        g_MemoryTracker.Register(ptr,size,file,line);   // Registra l'allocazione nel MemoryTracker
 
         // Log debug con nome dell'allocatore usato, dimensione, indirizzo e posizione nel codice
         std::cout << "[MM][" << GetAllocatorName(isSmallAllocation) << "] Allocated " << size << " bytes | Address : " << ptr << " | Location : "
@@ -100,23 +87,20 @@ namespace MM
             return;
         }
 
-        auto it = g_Allocations.find(ptr); // Cerca il puntatore nella mappa delle allocazioni
+        std::size_t size = 0;   // Conta la dimensione dell'allocazione recuperata dal tracker
 
-        // Stampa un messaggio di avviso se si tenta di liberare memoria non allocata
-        if(it == g_Allocations.end())
+        // Chiede al MemoryTracker di rimuovere il puntatore dalle locazioni attive
+        // Se il ptr non esiste, significa che non è stato allocato dal MemoryManager oppure è già stato liberato
+        if(!g_MemoryTracker.Unregister(ptr,size))
         {
-            std::cout << "[MM][Warning] Attemped to free unknown pointer | Address: " << ptr << std::endl; 
+            std::cout << "[MM][Warning] Attempted to free unknown pointer | Address : " << ptr << std::endl;
             return;
         }
-
-        std::size_t size = it->second.size; // Ottiene la dimensione dell'allocazione dalla mappa
 
         const bool isSmallAllocation = size <= SMALL_ALLOCATION_THRESHOLD;  // Determina quale allocatore deve gestire la deallocazione
 
         g_CurrentAllocated -= size; // Aggiorna la memoria attualmente allocata
         g_FreeCount++; // Incrementa il contatore delle deallocazioni
-
-        g_Allocations.erase(it); // Rimuove l'allocazione dalla mappa
         
         // SmallObjectAllocator o GeneralAllocator
         if(isSmallAllocation)
@@ -140,7 +124,7 @@ namespace MM
         std::cout << "Current Allocated: " << g_CurrentAllocated << " bytes" << std::endl; // Stampa la memoria attualmente allocata
         std::cout << "Allocation Count: " << g_AllocationCount << std::endl; // Stampa il numero di allocazioni
         std::cout << "Free Count: " << g_FreeCount << std::endl; // Stampa il numero di deallocazioni
-        std::cout << "Active Blocks: " << g_Allocations.size() << std::endl; // Stampa il numero di blocchi attivi (non ancora liberati)
+        std::cout << "Active Blocks: " << g_MemoryTracker.GetActiveAllocations() << std::endl; // Stampa il numero di blocchi attivi (non ancora liberati)
         std::cout << "==========================================\n" << std::endl;
     }
 
@@ -149,27 +133,11 @@ namespace MM
     {
         std::cout << "\n========= MEMORY LEAK REPORT =========\n";
 
-        if(g_Allocations.empty())
-        {
-            std::cout << "No memory leaks detected." << std::endl; // Stampa un messaggio se non sono state rilevate perdite di memoria
-        }
-        else
-        {
-            std::cout << "Memory leaks detected: " << std::endl; 
-
-            // Ogni elemento della mappa contiene
-            // ptr --> indirizzo della memoria allocata
-            // info --> informazioni dell'allocazione
-            for (const auto& [ptr, info ] : g_Allocations)
-            {
-                std::cout << "-- Address: " << ptr << " | Size : " << info.size << " bytes | Location: " << info.file << " : " << info.line << std::endl;
-            }
-        }
+        // Chiedere al MemoryTracker di stampare tutte le allocazioni ancora attive.
+        // Se ce ne sono, vengono considerate come Memory Leaks
+        g_MemoryTracker.PrintLeaks();
 
         std::cout << "===============================" << std::endl; 
-
     }
-
-
 
 }

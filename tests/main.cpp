@@ -61,20 +61,29 @@ int main()
 
     */
    
+    /*
+        // TEST GENERAL ALLOCATOR
 
-    // TEST GENERAL ALLOCATOR
+        // Small
+        int* x = (int*)MM_MALLOC(4);
 
-    // Small
-    int* x = (int*)MM_MALLOC(4);
+        // General
+        void* y = MM_MALLOC(128);
 
-    // General
-    void* y = MM_MALLOC(128);
+        MM_FREE(x);
+        MM_FREE(y);
 
-    MM_FREE(x);
-    MM_FREE(y);
+        MM::PrintStats();   // Stampa le caratteristiche
+        MM::DumpLeaks();    // Controlla evenetuali leak
+    */
 
-    MM::PrintStats();   // Stampa le caratteristiche
-    MM::DumpLeaks();    // Controlla evenetuali leak
+
+    int* x = MM_NEW(int,10);
+
+    MM::PrintStats();
+    MM::DumpLeaks();
+
+
 
     return 0;
 }
