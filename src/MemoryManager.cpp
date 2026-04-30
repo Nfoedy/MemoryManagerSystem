@@ -93,7 +93,7 @@ namespace MM
         // Se il ptr non esiste, significa che non è stato allocato dal MemoryManager oppure è già stato liberato
         if(!g_MemoryTracker.Unregister(ptr,size))
         {
-            std::cout << "[MM][Warning] Attempted to free unknown pointer | Address : " << ptr << std::endl;
+            //std::cout << "[MM][Warning] Attempted to free unknown pointer | Address : " << ptr << std::endl;
             return;
         }
 
