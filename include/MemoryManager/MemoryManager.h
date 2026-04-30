@@ -44,14 +44,14 @@ namespace MM
         ptr->~T(); // Chiama il distruttore dell'oggetto di tipo T
 
         // 2. Liberazione memoria
-        MM:Free(ptr); // Libera la memoria associata all'oggetto usando la funzione Free del MemoryManager
+        MM::Free(ptr); // Libera la memoria associata all'oggetto usando la funzione Free del MemoryManager
     }
 
 }
 
 // MACRO
-#define MM_MALLOC(size) MM::Malloc(size, __FILE__, __LINE__) // Macro per chiamare Malloc con informazioni sul file e sulla linea di codice
-#define MM_FREE(ptr) MM::Free(ptr) // Macro per chiamare Free
+#define MM_MALLOC(size) MM::Malloc(size, __FILE__, __LINE__) // Allocazione raw | Macro per chiamare Malloc con informazioni sul file e sulla linea di codice
+#define MM_FREE(ptr) MM::Free(ptr) // Deallocazione raw | Macro per chiamare Free
 
-#define MM_NEW(type, ...) MM::New<type>(__FILE__, __LINE__, ##__VA_ARGS__) // Macro per chiamare New con informazioni sul file e sulla linea di codice
-#define MM_DELETE(ptr) MM::Delete(ptr) // Macro per chiamare Delete
+#define MM_NEW(type, ...) MM::New<type>(__FILE__, __LINE__, ##__VA_ARGS__) // Allocazione oggetti (Costruttore) | Macro per chiamare New con informazioni sul file e sulla linea di codice
+#define MM_DELETE(ptr) MM::Delete(ptr) // Deallocazione oggetti (Distruttore + free) Macro per chiamare Delete

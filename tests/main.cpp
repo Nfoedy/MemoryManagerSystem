@@ -78,11 +78,21 @@ int main()
     */
 
 
+    /*
     int* x = MM_NEW(int,10);
 
     MM::PrintStats();
     MM::DumpLeaks();
+    */
 
+    int* a = (int*)MM_MALLOC(4);
+    int* b = MM_NEW(int, 20);
+
+    MM_FREE(a);
+    // b NON lo libero → leak
+
+    MM::PrintStats();
+    MM::DumpLeaks();
 
 
     return 0;
