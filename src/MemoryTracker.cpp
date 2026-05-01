@@ -6,7 +6,6 @@
 
 
 namespace MM
-
 {
 
     // Registra una nuova allocazione
