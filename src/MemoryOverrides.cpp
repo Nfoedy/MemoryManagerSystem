@@ -1,12 +1,13 @@
 #include "MemoryManager/MemoryManager.h"
 
 #include <cstdlib>
+#include <cstddef>
 
 
 static bool g_InsideMM = false;  // Variabile per evitare una ricorsione infinita. Dice se siamo dentro al MM   
 
 // Override globale dell'operatore new. Da ora in poi quando si scrive "new Tipo()"", il programma passerà da questa funzione
-void* operator new(size_t size)
+void* operator new(std::size_t size)
 {
     // Se siamo già dentro al MM non richiama la MM::Malloc
     if(g_InsideMM) return std::malloc(size);

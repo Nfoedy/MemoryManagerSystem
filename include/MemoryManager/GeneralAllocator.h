@@ -1,6 +1,6 @@
 #pragma once
 
-#include <cstdlib>
+#include <cstddef>
 
 /*
     GeneralAllocator
@@ -17,9 +17,7 @@ class GeneralAllocator
 {
 
 public:
-    void* Allocate(size_t size);
+    void* Allocate(std::size_t size);
     void Free(void* ptr);
 
-
 };
-

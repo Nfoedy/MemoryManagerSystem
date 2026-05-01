@@ -5,6 +5,7 @@
 
 #include <iostream> // per debug
 #include <cstddef>
+#include <cstring>  // per std::strcmp
 
 
 namespace MM
@@ -40,7 +41,12 @@ namespace MM
         if(size == 0)
         {
             std::cout << "[MM][Warning] Requested allocation of 0 bytes at " << file << " : " << line << std::endl;
+            size = 1;
         }
+
+        // Le allocazioni generate dal global_new sono interne al sistem/STL
+        // Le lasca allocora, ma non le traccia cosi non sporca le stats ed i leaks
+        const bool shouldTrack = !(file != nullptr && std::strcmp(file, "global_new") == 0); 
 
         const bool isSmallAllocation = size <= SMALL_ALLOCATION_THRESHOLD;      // Controllo in base alla dimensione richiesta
 
@@ -63,16 +69,20 @@ namespace MM
             return nullptr;
         }
 
-        g_TotalAllocated += size; // Aggiorna la memoria totale allocata
-        g_CurrentAllocated += size; // Aggiorna la memoria attualmente allocata
-        g_AllocationCount++; // Incrementa il contatore delle allocazioni
+        if(shouldTrack)
+        {
+            g_TotalAllocated += size; // Aggiorna la memoria totale allocata
+            g_CurrentAllocated += size; // Aggiorna la memoria attualmente allocata
+            g_AllocationCount++; // Incrementa il contatore delle allocazioni
+
+            g_MemoryTracker.Register(ptr,size,file,line);   // Registra l'allocazione nel MemoryTracker
+
+            // Log debug con nome dell'allocatore usato, dimensione, indirizzo e posizione nel codice
+            std::cout << "[MM][" << GetAllocatorName(isSmallAllocation) << "] Allocated " << size << " bytes | Address : " << ptr << " | Location : "
+            << file << " : " << line << std::endl; 
+        }
 
 
-        g_MemoryTracker.Register(ptr,size,file,line);   // Registra l'allocazione nel MemoryTracker
-
-        // Log debug con nome dell'allocatore usato, dimensione, indirizzo e posizione nel codice
-        std::cout << "[MM][" << GetAllocatorName(isSmallAllocation) << "] Allocated " << size << " bytes | Address : " << ptr << " | Location : "
-        << file << " : " << line << std::endl; 
 
         return ptr; // Restituisce il puntatore alla memoria allocata
     }
@@ -113,7 +123,7 @@ namespace MM
         }
 
         // Log debug della deallocazione
-        std::cout << "[MM][" << GetAllocatorName(isSmallAllocation) << "] | Freed " << size << " bytes | Address : " << ptr << std::endl;
+        std::cout << "[MM][" << GetAllocatorName(isSmallAllocation) << "] Freed " << size << " bytes | Address : " << ptr << std::endl;
     }
 
 

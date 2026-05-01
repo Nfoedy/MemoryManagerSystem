@@ -2,14 +2,14 @@
 
 #include <cstddef>  // per std::size_t
 #include <utility>  // per std::forward
-#include <new>      // per std::bad_alloc
+#include <new>      // per placement new 
 
 
 // Namespace perchè cosi evito conflitti con altre funzioni Malloc
 namespace MM
 {
     void* Malloc(std::size_t size, const char* file, int line);  // Alloca un blocco di memoria di dimensione size e tiene traccia del file e della linea di codice per il debug
-    void Free(void* ptr);       // Libera un blocco di memoria precedentemente allocato con Malloc
+    void Free(void* ptr);       // Libera memoria allocata con Malloc dal MM
 
     void PrintStats();  // Stampa le statistiche base sull'utilizzo della memoria
     void DumpLeaks();  // Stampa  perdite di memoria
