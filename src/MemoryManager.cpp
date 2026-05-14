@@ -45,7 +45,7 @@ namespace MM
         }
 
         // Le allocazioni generate dal global_new sono interne al sistem/STL
-        // Le lasca allocora, ma non le traccia cosi non sporca le stats ed i leaks
+        // Le lasca allocare, ma non le traccia cosi non sporca le stats ed i leaks
         const bool shouldTrack = !(file != nullptr && std::strcmp(file, "global_new") == 0); 
 
         const bool isSmallAllocation = size <= SMALL_ALLOCATION_THRESHOLD;      // Controllo in base alla dimensione richiesta

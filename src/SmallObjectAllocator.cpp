@@ -6,7 +6,7 @@
 /* 
     Il SmallObjectAllocator è un allocatore di memoria progettato per gestire in modo efficiente piccoli oggetti.
     
-    Funziona pre-allocando un blocco di memoria suddiviso in elemente e dimensione fissa (blockSize) e mantenendo una "FreeList" dei blocchi disponibili. 
+    Funziona pre-allocando un blocco di memoria suddiviso in elementi e dimensione fissa (blockSize) e mantenendo una "FreeList" dei blocchi disponibili. 
     In questo modo evita chiamate ripetute a malloc/free per ogni oggetto piccolo, riducendo frammentazione e migliorando le performance.
 
     Utilizzo in un FPS:

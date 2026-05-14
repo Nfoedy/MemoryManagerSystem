@@ -14,6 +14,7 @@ namespace MM
     void PrintStats();  // Stampa le statistiche base sull'utilizzo della memoria
     void DumpLeaks();  // Stampa  perdite di memoria
 
+    
     // NEW
     template<typename T, typename... Args>
         T* New(const char* file, int line, Args&&... args)    // Alloca memoria per un oggetto di tipo T, lo costruisce con i parametri passati e tiene traccia del file e della linea di codice per il debug
