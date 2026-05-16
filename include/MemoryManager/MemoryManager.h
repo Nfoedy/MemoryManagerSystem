@@ -2,18 +2,19 @@
 
 #include <cstddef>  // per std::size_t
 #include <utility>  // per std::forward
-#include <new>      // per std::bad_alloc
+#include <new>      // per placement new 
 
 
 // Namespace perchè cosi evito conflitti con altre funzioni Malloc
 namespace MM
 {
     void* Malloc(std::size_t size, const char* file, int line);  // Alloca un blocco di memoria di dimensione size e tiene traccia del file e della linea di codice per il debug
-    void Free(void* ptr);       // Libera un blocco di memoria precedentemente allocato con Malloc
+    void Free(void* ptr);       // Libera memoria allocata con Malloc dal MM
 
     void PrintStats();  // Stampa le statistiche base sull'utilizzo della memoria
     void DumpLeaks();  // Stampa  perdite di memoria
 
+    
     // NEW
     template<typename T, typename... Args>
         T* New(const char* file, int line, Args&&... args)    // Alloca memoria per un oggetto di tipo T, lo costruisce con i parametri passati e tiene traccia del file e della linea di codice per il debug
@@ -44,14 +45,14 @@ namespace MM
         ptr->~T(); // Chiama il distruttore dell'oggetto di tipo T
 
         // 2. Liberazione memoria
-        MM:Free(ptr); // Libera la memoria associata all'oggetto usando la funzione Free del MemoryManager
+        MM::Free(ptr); // Libera la memoria associata all'oggetto usando la funzione Free del MemoryManager
     }
 
 }
 
 // MACRO
-#define MM_MALLOC(size) MM::Malloc(size, __FILE__, __LINE__) // Macro per chiamare Malloc con informazioni sul file e sulla linea di codice
-#define MM_FREE(ptr) MM::Free(ptr) // Macro per chiamare Free
+#define MM_MALLOC(size) MM::Malloc(size, __FILE__, __LINE__) // Allocazione raw | Macro per chiamare Malloc con informazioni sul file e sulla linea di codice
+#define MM_FREE(ptr) MM::Free(ptr) // Deallocazione raw | Macro per chiamare Free
 
-#define MM_NEW(type, ...) MM::New<type>(__FILE__, __LINE__, ##__VA_ARGS__) // Macro per chiamare New con informazioni sul file e sulla linea di codice
-#define MM_DELETE(ptr) MM::Delete(ptr) // Macro per chiamare Delete
+#define MM_NEW(type, ...) MM::New<type>(__FILE__, __LINE__, ##__VA_ARGS__) // Allocazione oggetti (Costruttore) | Macro per chiamare New con informazioni sul file e sulla linea di codice
+#define MM_DELETE(ptr) MM::Delete(ptr) // Deallocazione oggetti (Distruttore + free) Macro per chiamare Delete

@@ -1,12 +1,13 @@
 #include "MemoryManager/MemoryManager.h"
 
 #include <cstdlib>
+#include <cstddef>
 
 
 static bool g_InsideMM = false;  // Variabile per evitare una ricorsione infinita. Dice se siamo dentro al MM   
 
 // Override globale dell'operatore new. Da ora in poi quando si scrive "new Tipo()"", il programma passerà da questa funzione
-void* operator new(size_t size)
+void* operator new(std::size_t size)
 {
     // Se siamo già dentro al MM non richiama la MM::Malloc
     if(g_InsideMM) return std::malloc(size);
@@ -22,7 +23,7 @@ void* operator new(size_t size)
 }
 
 
-// Override globale dell'operatore delete. Da ora in poi quando si scrive "delete ... " il programma passera da questa funzione
+// Override globale dell'operatore delete classico. Da ora in poi quando si scrive "delete ... " il programma passera da questa funzione
 void operator delete(void* ptr) noexcept
 {
     // Se il puntatore è nullo non fa nulla
@@ -48,9 +49,12 @@ void operator delete(void* ptr) noexcept
 }
 
 
-// Override globale dell'operatore delete. Da ora in poi quando si scrive "delete ... " il programma passera da questa funzione
+// Override globale dell'operatore delete con size. Da ora in poi quando si scrive "delete ... " il programma passera da questa funzione
 void operator delete(void* ptr, size_t size) noexcept
 {
+
+    (void)size; // In questa implementazione la size non ci serve, perchè il MM recupera la dim dalla mappa delle allocazioni
+
     // Se il puntatore è nullo non fa nulla
     if(ptr == nullptr)
     {
