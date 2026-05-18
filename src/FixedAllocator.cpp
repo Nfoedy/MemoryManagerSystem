@@ -1,5 +1,7 @@
 #include "MemoryManager/FixedAllocator.h"
 
+#include <utility>  // std::move
+
 
 namespace MM
 {
@@ -122,5 +124,5 @@ namespace MM
         return m_Chunks.size();
     }
 
-    
+
 }
