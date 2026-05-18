@@ -77,7 +77,7 @@ namespace MM
 
     void* SmallObjectAllocator::Allocate(std::size_t size)
     {
-        if(!CanHandle)
+        if(!CanHandle(size))
         {
             return nullptr;
         }
@@ -135,6 +135,12 @@ namespace MM
     std::size_t SmallObjectAllocator::GetAllocatorCount() const
     {
         return m_Allocators.size();
+    }
+
+
+    std::size_t SmallObjectAllocator::RoundUp(std::size_t size) const
+    {
+        return ((size + m_Alignment - 1) / m_Alignment) * m_Alignment;
     }
 
 

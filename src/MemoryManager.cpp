@@ -13,8 +13,9 @@ namespace MM
     namespace
     {
         // Parametri per lo SmallObjectAllocator 
-        static constexpr std::size_t SMALL_ALLOCATION_THRESHOLD = 64;      // Dimensione massima per usare il pool
-        static constexpr std::size_t SMALL_ALLOCATION_BLOCK_COUNT = 1000;    // Numero di blocchi del pool
+        static constexpr std::size_t SMALL_ALLOCATION_THRESHOLD = 64;       // Dimensione massima per usare il pool
+        static constexpr std::size_t SMALL_ALLOCATION_CHUNK_SIZE = 4096;    // Dimensione indicativa di ogni Chunk
+        static constexpr std::size_t SMALL_ALLOCATION_ALIGNMENT = 8;        // Step delle size class: 8, 16, 24...
 
         // Statistiche globali del MemomryManager
         static std::size_t g_TotalAllocated = 0; // Variabile globale per tenere traccia della memoria totale allocata
@@ -22,7 +23,7 @@ namespace MM
         static std::size_t g_AllocationCount = 0; // Variabile globale per tenere traccia del numero di allocazioni
         static std::size_t g_FreeCount = 0; // Variabile globale per tenere traccia del numero di deallocazioni
     
-        SmallObjectAllocator g_SmallAllocator(SMALL_ALLOCATION_THRESHOLD, SMALL_ALLOCATION_BLOCK_COUNT); // SmallObjectAllocator per gestire allocazioni di piccoli oggetti (blocchi di 64 byte, 1000 blocchi totali)
+        SmallObjectAllocator g_SmallAllocator(SMALL_ALLOCATION_THRESHOLD, SMALL_ALLOCATION_CHUNK_SIZE, SMALL_ALLOCATION_ALIGNMENT); // SmallObjectAllocator per gestire allocazioni di piccoli oggetti 
         GeneralAllocator g_GeneralAllocator;   // Variabile per gestire tutte le allocazioni che non vengono gestite dallo SmallObjAllocator
         MemoryTracker g_MemoryTracker;    // Oggetto resposabile del tracking delle allocazioni attive
 
@@ -55,7 +56,7 @@ namespace MM
         // SmallObjectAllocator o GeneralAllocator
         if(isSmallAllocation)
         {
-            ptr = g_SmallAllocator.Allocate(); // Se la dimensione è inferiore o uguale a THRESHOLD, utilizza il SmallObjectAllocator 
+            ptr = g_SmallAllocator.Allocate(size); // Se la dimensione è inferiore o uguale a THRESHOLD, utilizza il SmallObjectAllocator 
         }
         else
         {
@@ -115,7 +116,7 @@ namespace MM
         // SmallObjectAllocator o GeneralAllocator
         if(isSmallAllocation)
         {
-            g_SmallAllocator.Free(ptr); // Se la dimensione è inferiore, utilizza il SmallObjectAllocator per liberare la memoria
+            g_SmallAllocator.Deallocate(ptr,size); // Se la dimensione è inferiore, utilizza il SmallObjectAllocator per liberare la memoria
         }
         else
         {
