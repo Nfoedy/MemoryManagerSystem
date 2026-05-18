@@ -1,79 +1,148 @@
 #include "MemoryManager/SmallObjectAllocator.h"
 
-#include <cstdlib> // per std::malloc e std::free
+#include <limits>   // std::numeric_limits
 
 
-/* 
-    Il SmallObjectAllocator è un allocatore di memoria progettato per gestire in modo efficiente piccoli oggetti.
+namespace MM
+{
+    SmallObjectAllocator::SmallObjectAllocator(
+        std::size_t maxObjectSize,
+        std::size_t chunkSize,
+        std::size_t alignment
+    )
+    {
+        Init(maxObjectSize, chunkSize, alignment);
+    }
+
+
+    void SmallObjectAllocator::Init(
+        std::size_t maxObjectSize,
+        std::size_t chunkSize,
+        std::size_t alignment
+    )
+    {
+        if(maxObjectSize == 0 || chunkSize == 0 || alignment == 0)
+        {
+            return;
+        }
+
+        m_Alignment = alignment;
+
+        // Arrotondo maxObjectiSize all'allineamento scelto
+        m_MaxObjectSize = ((maxObjectSize + alignment - 1) / alignment) * alignment;
+        
+        // Salvo la dimensione indicativa di ogni Chunk
+        m_ChunkSize = chunkSize;
+
+        // Svuoto i FixedAllocator già presenti
+        m_Allocators.clear();
+
+        // Calcolo quanti FixedAllocator servono
+        const std::size_t allocatorCount = m_MaxObjectSize / m_Alignment;
+
+        // Riservo spazio nel vector
+        m_Allocators.reserve(allocatorCount);
+
+        // Creo tutti i FixedAllocator
+        for(std::size_t i = 0; i < allocatorCount; i++)
+        {
+            // Calcolo della blockSize
+            const std::size_t blockSize = (i + 1) * m_Alignment;
+
+            // Calcolo quanti blocchi mettere dentro ogni Chunk
+            std::size_t blocksPerChunk = m_ChunkSize / blockSize;
+
+            if(blocksPerChunk == 0)
+            {
+                blocksPerChunk = 1;
+            }
+
+            // Il Chunk usa unsigned char per salvare gli indici dei blocchi liberi, quindi massimo 255 blocchi
+            const std::size_t maxBlocks = static_cast<std::size_t>(std::numeric_limits<unsigned char>::max());
+
+            if(blocksPerChunk > maxBlocks)
+            {
+                blocksPerChunk = maxBlocks;
+            }
+
+            // Creo un FixedAllocator per questo blockSize
+            m_Allocators.emplace_back(
+                blockSize,
+                static_cast<unsigned char>(blocksPerChunk)
+            );
+        }
+    }
+
+
+
+    void* SmallObjectAllocator::Allocate(std::size_t size)
+    {
+        if(!CanHandle)
+        {
+            return nullptr;
+        }
+
+        // Calcolo l'indice del FixedAllocator corretto
+        const std::size_t index = GetAllocatorIndex(size);
+
+        // Delego l'allocazione al FixedAllocator corretto
+        return m_Allocators[index].Allocate();
+    }
+
+
+    void SmallObjectAllocator::Deallocate(void* ptr, std::size_t size)
+    {
+        if(ptr == nullptr)
+        {
+            return;
+        }
+
+        if(!CanHandle(size))
+        {
+            return;
+        }
+
+
+        // Trovo il FixedAllocator corretto in base alla size originale
+        const std::size_t index = GetAllocatorIndex(size);
+
+        // Delego la deallocazione al FixedAllocator corretto
+        m_Allocators[index].Deallocate(ptr);
+
+    }
+
     
-    Funziona pre-allocando un blocco di memoria suddiviso in elementi e dimensione fissa (blockSize) e mantenendo una "FreeList" dei blocchi disponibili. 
-    In questo modo evita chiamate ripetute a malloc/free per ogni oggetto piccolo, riducendo frammentazione e migliorando le performance.
-
-    Utilizzo in un FPS:
-    Viene usato per oggetti come proiettili, particelle, effetti visivi o componenti leggeti.
-    Invece di allocare memoria ogni volta, il sistema riutilizza blocchi già esistenti,
-    garantendo allocazioni veloci e frame rate stabili. 
-
-*/
-
-
-SmallObjectAllocator::SmallObjectAllocator(std::size_t blockSize, std::size_t blockCount)
-    : m_BlockSize(blockSize), m_BlockCount(blockCount)
-{
-    m_Memory = std::malloc(blockSize * blockCount); // Alloca un unico blocco di memoria che verrà suddiviso in blocchi più piccoli
-
-    // Controllo allocazione
-    if(!m_Memory)
+    // Dice se una certa size può essere gestita da questo SmallObjectAllocator
+    bool SmallObjectAllocator::CanHandle(std::size_t size) const
     {
-        m_FreeList = nullptr;
-        return;
+        return size > 0 && size <= m_MaxObjectSize && !m_Allocators.empty();
     }
 
-    // Costuizione Free List
-    char* current = static_cast<char*>(m_Memory); // Puntatore al blocco corrente
 
-    for (std::size_t i = 0; i < blockCount - 1; ++i)
+
+    std::size_t SmallObjectAllocator::GetMaxObjectSize() const
     {
-        char* next = current + blockSize; // Calcola l'indirizzo del blocco successivo
-        *(void**)current = next; // Imposta il puntatore al blocco successivo nella lista libera
-        current = next; // Sposta il puntatore corrente al blocco successivo
+        return m_MaxObjectSize;
     }
 
-    *(void**)current = nullptr; // L'ultimo blocco punta a nullptr (fine della lista)
 
-    m_FreeList = m_Memory; // La Free List inizialmente parte dal primo blocco
-}
-
-
-void* SmallObjectAllocator::Allocate()
-{
-    if(!m_FreeList)
+    std::size_t SmallObjectAllocator::GetAlignment() const
     {
-        return nullptr; // Se la lista libera è vuota, restituisce nullptr, cioè non ci sono blocchi disponibili
+        return m_Alignment;
     }
 
-    void* block = m_FreeList; // Prende il primo blocco dalla lista libera
 
-    m_FreeList = *(void**)m_FreeList; // Aggiorna la lista libera al blocco successivo
-    
-    return block; // Restituisce il blocco allocato
-}
-
-
-void SmallObjectAllocator::Free(void* ptr)
-{
-    if(ptr == nullptr)
+    std::size_t SmallObjectAllocator::GetAllocatorCount() const
     {
-        return;
+        return m_Allocators.size();
     }
 
-    *(void**)ptr = m_FreeList; // Inserisce il blocco restituito all'inizio della lista libera
-    m_FreeList = ptr; // Aggiorna la lista libera al blocco restituito
-}
 
-// Destructor 
-SmallObjectAllocator::~SmallObjectAllocator()
-{
-    std::free(m_Memory); // Libera il grande blocco di memoria allocato nel costruttore 
-}
+    std::size_t SmallObjectAllocator::GetAllocatorIndex(std::size_t size) const
+    {
+        const std::size_t roundedSize = RoundUp(size);
 
+        return (roundedSize / m_Alignment) - 1;
+    }
+
+}

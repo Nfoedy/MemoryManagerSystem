@@ -21,6 +21,12 @@ namespace MM
         FixedAllocator() = default;
         FixedAllocator(std::size_t blockSize, unsigned char blocksPerChunk);
 
+        FixedAllocator(const FixedAllocator&) = delete;
+        FixedAllocator& operator=(const FixedAllocator&) = delete;
+
+        FixedAllocator(FixedAllocator&&) noexcept = default;
+        FixedAllocator& operator=(FixedAllocator&&) noexcept = default;
+
         void Init(std::size_t blockSize, unsigned char blocksPerChunk);
 
         // Alloca un blocco della dimensione gestita da questo FixedAllocator
