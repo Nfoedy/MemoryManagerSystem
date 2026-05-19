@@ -46,8 +46,8 @@ namespace MM
         }
 
         // Le allocazioni generate dal global_new sono interne al sistem/STL
-        // Le lasca allocare, ma non le traccia cosi non sporca le stats ed i leaks
-        const bool shouldTrack = !(file != nullptr && std::strcmp(file, "global_new") == 0); 
+        const bool isGlobalNew = (file != nullptr && std::strcmp(file, "global_new") == 0);
+        const bool shouldLog = !isGlobalNew;
 
         const bool isSmallAllocation = size <= SMALL_ALLOCATION_THRESHOLD;      // Controllo in base alla dimensione richiesta
 
@@ -70,7 +70,7 @@ namespace MM
             return nullptr;
         }
 
-        if(shouldTrack)
+        if(shouldLog)
         {
             g_TotalAllocated += size; // Aggiorna la memoria totale allocata
             g_CurrentAllocated += size; // Aggiorna la memoria attualmente allocata

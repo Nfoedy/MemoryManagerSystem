@@ -2,25 +2,56 @@
 
 #include <cstdlib>
 #include <cstddef>
+#include <new>
 
 
-static bool g_InsideMM = false;  // Variabile per evitare una ricorsione infinita. Dice se siamo dentro al MM   
 
-// Override globale dell'operatore new. Da ora in poi quando si scrive "new Tipo()"", il programma passerà da questa funzione
+#ifdef USE_MM_GLOBAL_OVERRIDES
+
+
+static bool g_InsideMM = false;  // Flag per evitare una ricorsione infinita. Dice se siamo dentro al MM   
+
+// Override globale dell'operatore new. 
+// Se USE_MM_GLOBAL_OVERRIDES è definitio, ogni "new" passa da qui
 void* operator new(std::size_t size)
 {
-    // Se siamo già dentro al MM non richiama la MM::Malloc
-    if(g_InsideMM) return std::malloc(size);
+    // Evita ricorsione infinita
+    if(g_InsideMM)
+    {
 
-    g_InsideMM = true;   // Segna che siamo entrati nel MM
+        void* ptr = std::malloc(size);
 
-    void* ptr = MM::Malloc(size, "global_new", 0); // Chiede memoria al MM, usando un file fittizio "global_new"
+        if(ptr == nullptr)
+        {
+            throw std::bad_alloc();
+        }
 
-    g_InsideMM = false;  // Usciamo dal MM
+        return ptr;
+    }
 
-    return ptr;  // Restituisce il puntatore allocato
+    g_InsideMM = true;
 
+    void* ptr = MM::Malloc(size, "global_new", 0);
+
+    g_InsideMM = false;
+
+    if(ptr == nullptr)
+    {
+        throw std::bad_alloc();
+    }
+
+    return ptr;
+    
 }
+
+
+
+// Override globale dell'operatore new[]
+void* operator new[](std::size_t size)
+{
+    return operator new(size);
+}
+
 
 
 // Override globale dell'operatore delete classico. Da ora in poi quando si scrive "delete ... " il programma passera da questa funzione
@@ -55,28 +86,26 @@ void operator delete(void* ptr, size_t size) noexcept
 
     (void)size; // In questa implementazione la size non ci serve, perchè il MM recupera la dim dalla mappa delle allocazioni
 
-    // Se il puntatore è nullo non fa nulla
-    if(ptr == nullptr)
-    {
-        return;
-    }
-
-    // Se siamo già dentro al MM usiamo free direttamente per evitare ricorsione
-    if(g_InsideMM) 
-    {
-        std::free(ptr);
-        return;
-    }
-
-
-    g_InsideMM = true; // Segna che siamo entrati nel MM
-
-    MM::Free(ptr);  // Libera la memoria passando dal MM
-
-    g_InsideMM = false;  // Usciamo dal MM
+    operator delete(ptr);
    
 }
 
 
 
+// Override globale dell'operatore delete[] classico
+void operator delete[](void* ptr) noexcept
+{
+    operator delete(ptr);
+}
 
+
+// Override globale dell'operatore delete[] con size
+void operator delete[](void* ptr, std::size_t size) noexcept
+{
+    (void)size;
+
+    operator delete(ptr);
+}
+
+
+#endif

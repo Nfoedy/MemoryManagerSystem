@@ -1,7 +1,6 @@
 #include "MemoryManager/MemoryTracker.h"
 
 #include <iostream>
-#include <cstring>
 #include <cstddef>
 
 
@@ -11,12 +10,6 @@ namespace MM
     // Registra una nuova allocazione
     void MemoryTracker::Register(void* ptr, std::size_t size, const char* file, int line)
     {    
-        // Ignora allocazioni interne (global override / STL / iostream)
-        if(file != nullptr && std::strcmp(file, "global_new") == 0)
-        {
-            return;
-        }
-
         m_Allocations[ptr] = { size, file, line };   // Inserisce o aggiorna nella mappa il puntatore con le relative info
     }
 
