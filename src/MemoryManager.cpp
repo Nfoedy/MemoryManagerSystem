@@ -119,15 +119,22 @@ namespace MM
             return;
         }
 
-        std::size_t size = 0;   // Conta la dimensione dell'allocazione recuperata dal tracker
+        AllocationInfo info{};
 
         // Chiede al MemoryTracker di rimuovere il puntatore dalle locazioni attive
         // Se il ptr non esiste, significa che non è stato allocato dal MemoryManager oppure è già stato liberato
-        if(!g_MemoryTracker.Unregister(ptr,size))
+        if(!g_MemoryTracker.Unregister(ptr, info))
         {
             //std::cout << "[MM][Warning] Attempted to free unknown pointer | Address : " << ptr << std::endl;
             return;
         }
+
+        const std::size_t size = info.size;
+
+        // Se l'allocazione arriva dal Global Override, la tracciamo ma non stampiamo log numerosi
+        const bool isGlobalNew = (info.file != nullptr && std::strcmp(info.file, "global_new") == 0);
+        const bool shouldLog = !isGlobalNew;
+        
 
         const bool isSmallAllocation = size <= SMALL_ALLOCATION_THRESHOLD;  // Determina quale allocatore deve gestire la deallocazione
 
@@ -144,8 +151,13 @@ namespace MM
             g_GeneralAllocator.Free(ptr); // Altrimenti, utilizza il General Allocator per liberare la memoria
         }
 
-        // Log debug della deallocazione
-        std::cout << "[MM][" << GetAllocatorName(isSmallAllocation) << "] Freed " << size << " bytes | Address : " << ptr << std::endl;
+        if(shouldLog)
+        {
+            std::cout << "[MM][" << GetAllocatorName(isSmallAllocation) << "] Freed "
+                    << size << " bytes | Address : " << ptr
+                    << std::endl;
+        }
+        
     }
 
 

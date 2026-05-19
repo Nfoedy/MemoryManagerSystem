@@ -15,13 +15,13 @@ namespace MM
 
 
     // Rimuove una allocazione dalla mappa
-    bool MemoryTracker::Unregister(void* ptr, std::size_t& outSize)
+    bool MemoryTracker::Unregister(void* ptr, AllocationInfo& outInfo)
     {
         auto it = m_Allocations.find(ptr);      // cerca il puntatore nella mappa
 
         if(it == m_Allocations.end()) return false;   // se non esiste restituisce false
 
-        outSize = it->second.size;     // Salva la dimensione dell'allocazione (serve al MM)
+        outInfo = it->second;     // Copia size, file e line dell'allocazione
 
         m_Allocations.erase(it);     // rimuove il puntatore dalla mappa
 

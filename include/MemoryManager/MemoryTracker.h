@@ -10,22 +10,22 @@ namespace MM
     // Struttura che contiene le info relative ad una signola allocazione
     struct AllocationInfo
     {
-        std::size_t size; // Dimensione dell'allocazione
-        const char* file; // Nome del file in cui è stata effettuata l'allocazione
-        int line; // Numero di linea in cui è stata effettuata l'allocazione
+        std::size_t size;       // Dimensione dell'allocazione
+        const char* file;       // Nome del file in cui è stata effettuata l'allocazione
+        int line;               // Numero di linea in cui è stata effettuata l'allocazione
     };
 
 
-    /* Classe responsabile del tracking delle allocazioni*/
+    /* Classe responsabile del tracking delle allocazioni attive*/
     class MemoryTracker
     {
     public:
 
         void Register(void* ptr, std::size_t size, const char* file, int line);   // Registra una nuova allocazione nella mappa
 
-        // Rimuove un allocazione dalla mappa
-        // Ritorna true se trovata, false se il puntatore non esiste
-        bool Unregister(void* ptr, std::size_t& outSize);  
+        // Rimuove un'allocazione dalla mappa
+        // Ritorna true se trovata, false se il puntatore non esiste e ritorna tutte le info dell'allocazione rimossa
+        bool Unregister(void* ptr, AllocationInfo& outInfo);  
 
         void PrintLeaks() const;   // Stampa le statistiche base sull'utilizzo della memoria
 
@@ -33,7 +33,7 @@ namespace MM
 
     private:
 
-        std::unordered_map<void*, AllocationInfo> m_Allocations; // Mappa : puntatore --> informazioni allocazione
+        std::unordered_map<void*, AllocationInfo> m_Allocations; // Mappa = puntatore --> informazioni allocazione
 
     };
 
