@@ -1,24 +1,23 @@
 #include "MemoryManager/MemoryManager.h"
 
-#include <cstdlib>
-#include <cstddef>
-#include <new>
+#include <cstdlib>      // std::malloc, std::free
+#include <cstddef>      // std::size_t
+#include <new>          // std::bad_alloc
 
 
 
 #ifdef USE_MM_GLOBAL_OVERRIDES
 
-
-static thread_local bool g_InsideMM = false;  // Flag per evitare una ricorsione infinita. Dice se siamo dentro al MM   
+// Flag thread-local per evitare ricorsione quando il MemoryManager usa internamenti new/delete
+static thread_local bool g_InsideMM = false;    
 
 // Override globale dell'operatore new. 
 // Se USE_MM_GLOBAL_OVERRIDES è definitio, ogni "new" passa da qui
 void* operator new(std::size_t size)
 {
-    // Evita ricorsione infinita
+    // Prima di MM::Initialize() o durante chiamate interne, usa malloc diretto
     if(g_InsideMM || !MM::IsInitialized())
     {
-
         void* ptr = std::malloc(size);
 
         if(ptr == nullptr)
@@ -29,6 +28,7 @@ void* operator new(std::size_t size)
         return ptr;
     }
 
+    // Da qui in poi l'allocazione passa dal MemoryManager
     g_InsideMM = true;
 
     void* ptr = MM::Malloc(size, "global_new", 0);
@@ -46,7 +46,7 @@ void* operator new(std::size_t size)
 
 
 
-// Override globale dell'operatore new[]
+// Override globale dell'operatore new[] per gli array dinamici
 void* operator new[](std::size_t size)
 {
     return operator new(size);
@@ -55,6 +55,7 @@ void* operator new[](std::size_t size)
 
 
 // Override globale dell'operatore delete classico. Da ora in poi quando si scrive "delete ... " il programma passera da questa funzione
+// Attivo solo se USE_MM_GLOBAL_OVERRIDES è definito
 void operator delete(void* ptr) noexcept
 {
     // Se il puntatore è nullo non fa nulla
@@ -63,36 +64,35 @@ void operator delete(void* ptr) noexcept
         return;
     }
 
-    // Se siamo già dentro al MM usiamo free direttamente per evitare ricorsione
+    // Prima di MM::Initialize() o durante chiamate interne, ysa free diretto
     if(g_InsideMM || !MM::IsInitialized()) 
     {
         std::free(ptr);
         return;
     }
 
+    // Da qui in poi la deallocazione passa dal MemoryManager
+    g_InsideMM = true; 
 
-    g_InsideMM = true; // Segna che siamo entrati nel MM
+    MM::Free(ptr); 
 
-    MM::Free(ptr);  // Libera la memoria passando dal MM
-
-    g_InsideMM = false;  // Usciamo dal MM
+    g_InsideMM = false; 
    
 }
 
 
-// Override globale dell'operatore delete con size. Da ora in poi quando si scrive "delete ... " il programma passera da questa funzione
-void operator delete(void* ptr, size_t size) noexcept
+// Override globale dell'operatore delete con size, usato da alcuni compilatori moderni
+void operator delete(void* ptr, std::size_t size) noexcept
 {
+    // La size non serve perchè MM::Free recupera le informazioni dal MemoryTracker
+    (void)size; 
 
-    (void)size; // In questa implementazione la size non ci serve, perchè il MM recupera la dim dalla mappa delle allocazioni
-
-    operator delete(ptr);
-   
+    operator delete(ptr);   
 }
 
 
 
-// Override globale dell'operatore delete[] classico
+// Override globale dell'operatore delete[] per gli array dinamici
 void operator delete[](void* ptr) noexcept
 {
     operator delete(ptr);
@@ -108,4 +108,4 @@ void operator delete[](void* ptr, std::size_t size) noexcept
 }
 
 
-#endif
+#endif  // USE_MM_GLOBAL_OVERRIDES

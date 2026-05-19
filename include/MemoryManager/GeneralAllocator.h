@@ -1,6 +1,6 @@
 #pragma once
 
-#include <cstddef>
+#include <cstddef>   // std::size_t
 
 /*
     GeneralAllocator
@@ -15,9 +15,10 @@
 
 class GeneralAllocator
 {
-
 public:
+    // Alloca memoria raw usando l'allocatore generale
     void* Allocate(std::size_t size);
-    void Free(void* ptr);
 
+    // Libera memoria raw precendentemente allocata dal GeneralAllocator
+    void Free(void* ptr);
 };
