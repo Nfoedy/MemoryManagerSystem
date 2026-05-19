@@ -9,14 +9,14 @@
 #ifdef USE_MM_GLOBAL_OVERRIDES
 
 
-static bool g_InsideMM = false;  // Flag per evitare una ricorsione infinita. Dice se siamo dentro al MM   
+static thread_local bool g_InsideMM = false;  // Flag per evitare una ricorsione infinita. Dice se siamo dentro al MM   
 
 // Override globale dell'operatore new. 
 // Se USE_MM_GLOBAL_OVERRIDES è definitio, ogni "new" passa da qui
 void* operator new(std::size_t size)
 {
     // Evita ricorsione infinita
-    if(g_InsideMM)
+    if(g_InsideMM || !MM::IsInitialized())
     {
 
         void* ptr = std::malloc(size);
@@ -64,7 +64,7 @@ void operator delete(void* ptr) noexcept
     }
 
     // Se siamo già dentro al MM usiamo free direttamente per evitare ricorsione
-    if(g_InsideMM) 
+    if(g_InsideMM || !MM::IsInitialized()) 
     {
         std::free(ptr);
         return;

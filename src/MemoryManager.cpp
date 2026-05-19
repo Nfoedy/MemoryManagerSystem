@@ -22,6 +22,8 @@ namespace MM
         static std::size_t g_CurrentAllocated = 0; // Variabile globale per tenere traccia della memoria attualmente allocata
         static std::size_t g_AllocationCount = 0; // Variabile globale per tenere traccia del numero di allocazioni
         static std::size_t g_FreeCount = 0; // Variabile globale per tenere traccia del numero di deallocazioni
+
+        static bool g_IsInitialized = false; 
     
         SmallObjectAllocator g_SmallAllocator(SMALL_ALLOCATION_THRESHOLD, SMALL_ALLOCATION_CHUNK_SIZE, SMALL_ALLOCATION_ALIGNMENT); // SmallObjectAllocator per gestire allocazioni di piccoli oggetti 
         GeneralAllocator g_GeneralAllocator;   // Variabile per gestire tutte le allocazioni che non vengono gestite dallo SmallObjAllocator
@@ -33,7 +35,25 @@ namespace MM
             return isSmallAllocation ? "Pool" : "General";
         }
     }
+
+
     
+    void Initialize()
+    {
+        g_IsInitialized = true;
+    }
+
+    void Shutdown()
+    {
+        g_IsInitialized = false;
+    }
+
+    bool IsInitialized()
+    {
+        return g_IsInitialized;
+    }
+
+
 
     void* Malloc(std::size_t size, const char* file, int line)
     {

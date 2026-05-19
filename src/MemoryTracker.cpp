@@ -54,7 +54,7 @@ namespace MM
 
 
     // Restituisce il numero di allocazioni ancora attive
-    size_t MemoryTracker::GetActiveAllocations() const
+    std::size_t MemoryTracker::GetActiveAllocations() const
     {
         return m_Allocations.size();     // Numero di elementi nella mappa
     }

@@ -8,6 +8,11 @@
 // Namespace perchè cosi evito conflitti con altre funzioni Malloc
 namespace MM
 {
+    void Initialize();   // Inizializza il MemoryManager, se necessario
+    void Shutdown();     // Disabilita il MemoryManager
+    bool IsInitialized();   // Ritorna true se pronto
+    
+    
     void* Malloc(std::size_t size, const char* file, int line);  // Alloca un blocco di memoria di dimensione size e tiene traccia del file e della linea di codice per il debug
     void Free(void* ptr);       // Libera memoria allocata con Malloc dal MM
 
@@ -18,7 +23,7 @@ namespace MM
     // NEW
     template<typename T, typename... Args>
         T* New(const char* file, int line, Args&&... args)    // Alloca memoria per un oggetto di tipo T, lo costruisce con i parametri passati e tiene traccia del file e della linea di codice per il debug
-        {
+    {
         // 1. Allocazione memoria
         void* mem = MM::Malloc(sizeof(T), file, line);   // Alloca memoria per un oggetto di tipo T
 
