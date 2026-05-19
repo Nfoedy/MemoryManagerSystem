@@ -10,25 +10,30 @@ namespace MM
         Init(blockSize, blocksPerChunk);
     }
 
-    void FixedAllocator::Init(std::size_t blockSize, unsigned char blockPerChunk)
+    void FixedAllocator::Init(std::size_t blockSize, unsigned char blocksPerChunk)
     {
+        // Salva la dimensione fissa dei blocchi e quanti blocchi avrà ogni Chunk
         m_BlockSize = blockSize;
-        m_BlocksPerChunk = blockPerChunk;
+        m_BlocksPerChunk = blocksPerChunk;
 
+        // Rimuove eventuali Chunk precedenti
         m_Chunks.clear();
 
+        // Reset degli indirizzi cached usati per allocazione e deallocazione
         m_AllocChunkIndex = INVALID_CHUNK_INDEX;
         m_DeallocChunkIndex = INVALID_CHUNK_INDEX;
     }
 
+
     void* FixedAllocator::Allocate()
     {
+        // Se l'allocator non è inizializzato correttamente, l'allocazione fallisce
         if(m_BlockSize == 0 || m_BlocksPerChunk == 0)
         {
             return nullptr;
         }
 
-        // Prima proviamo l'ultimo Chunk usato per allocare
+        // Prova prima l'ultimo Chunk usato per allocare
         if(m_AllocChunkIndex != INVALID_CHUNK_INDEX 
             && m_AllocChunkIndex < m_Chunks.size() 
             && m_Chunks[m_AllocChunkIndex].HasAvailableBlocks())
@@ -36,7 +41,7 @@ namespace MM
             return m_Chunks[m_AllocChunkIndex].Allocate(m_BlockSize);
         }
 
-        // Se il Chunk cached non ba bene, allora cerco un altro Chunk con spazio libero
+        // Se il Chunk cached non va bene, allora cerco un altro Chunk con spazio libero
         for(std::size_t i = 0; i < m_Chunks.size(); ++i)
         {
             if(m_Chunks[i].HasAvailableBlocks())
@@ -50,21 +55,26 @@ namespace MM
         Chunk newChunk;
         newChunk.Init(m_BlockSize, m_BlocksPerChunk);
 
+        // Se il nuovo Chunk non è valido, l'allocazione fallisce
         if(!newChunk.HasAvailableBlocks())
         {
             return nullptr;
         }
 
+        // Sposta il nuovo Chunk dentro il vector senza copiarlo
         m_Chunks.push_back(std::move(newChunk));
 
+        // Aggiorna l'indice del Chunk usato per allocare
         m_AllocChunkIndex = m_Chunks.size() - 1;
 
+        // Alloca dal nuovo Chunk appena creato
         return m_Chunks[m_AllocChunkIndex].Allocate(m_BlockSize);
     }
 
 
     void FixedAllocator::Deallocate(void* ptr)
     {
+        // Deallocare un nullpt non fa nulla
         if(ptr == nullptr)
         {
             return;
@@ -96,11 +106,13 @@ namespace MM
 
     bool FixedAllocator::Owns(void* ptr) const
     {
+        // Un nullptr non può appartenere a nessun Chunk
         if(ptr == nullptr)
         {
             return false;
         }
 
+        // Controlla se almeno un Chunk gestito possiede il puntatore
         for(const Chunk& chunk : m_Chunks)
         {
             if(chunk.Owns(ptr, m_BlockSize, m_BlocksPerChunk))
@@ -115,12 +127,14 @@ namespace MM
 
     std::size_t FixedAllocator::GetBlockSize() const
     {
+        // Restituisce la dimensione fissa dei blocchi gestiti
         return m_BlockSize;
     }
 
     
     std::size_t FixedAllocator::GetChunkCount() const
     {
+        // Restituisce quanti Chunk sono attualmente gestiti
         return m_Chunks.size();
     }
 

@@ -17,15 +17,15 @@ namespace MM
         Chunk() = default;
         ~Chunk();
 
-        // Evitiamo copie accidentali: Chunk possiede memoria raw
+        // Disabilita la copia perchè Chunk possiede memoria raw
         Chunk(const Chunk&) = delete;
         Chunk& operator=(const Chunk&) = delete;
 
-        // Permettiamo lo spostamento, utile in futuro con std::vector<Chunk>
+        // Abilita lo spostamento, utile quando Chunk viene gestito da std::vector
         Chunk(Chunk&& other) noexcept;
         Chunk& operator=(Chunk&& other) noexcept;
 
-        // Inizializza il chunk con blocci di dimensione blockSize
+        // Inizializza il chunk con blocci di dim fissa
         void Init(std::size_t blockSize, unsigned char blocks);
 
         // Libera memoria gestita dal chunk
@@ -44,12 +44,12 @@ namespace MM
         bool Owns(void* ptr, std::size_t blockSize, unsigned char blocks) const;
 
         // Ritorna true se tutti i bloccji sono liberi
-        bool IsCompletelyFree(unsigned char blcoks) const;
+        bool IsCompletelyFree(unsigned char blocks) const;
 
     private:
 
-        unsigned char* m_Data = nullptr;            // Memoria gestita dal Chunk
-        unsigned char m_FirstAvailableBlock = 0;    // Indice del primo blocco libero
-        unsigned char m_BlocksAvailable = 0;         // Numero di blocchi liberi
+        unsigned char* m_Data = nullptr;            // Puntatore alla memoria row gestita dal Chunk
+        unsigned char m_FirstAvailableBlock = 0;    // Indice del primo blocco libero nella free list
+        unsigned char m_BlocksAvailable = 0;        // Numero di blocchi liberi
     };
 }

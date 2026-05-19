@@ -1,27 +1,26 @@
 #include "MemoryManager/MemoryTracker.h"
 
-#include <iostream>
-#include <cstddef>
+#include <iostream>     // std::cout
+#include <cstddef>      // std::size_t
 
 
 namespace MM
 {
-
-    // Registra una nuova allocazione
+    // Registra una nuova allocazione associando il puntatore alle sue informazioni di debut
     void MemoryTracker::Register(void* ptr, std::size_t size, const char* file, int line)
     {    
-        m_Allocations[ptr] = { size, file, line };   // Inserisce o aggiorna nella mappa il puntatore con le relative info
+        m_Allocations[ptr] = { size, file, line };   
     }
 
 
-    // Rimuove una allocazione dalla mappa
+    // Rimuove un'allocazione dalla mappa e restituisce le info salvate
     bool MemoryTracker::Unregister(void* ptr, AllocationInfo& outInfo)
     {
         auto it = m_Allocations.find(ptr);      // cerca il puntatore nella mappa
 
         if(it == m_Allocations.end()) return false;   // se non esiste restituisce false
 
-        outInfo = it->second;     // Copia size, file e line dell'allocazione
+        outInfo = it->second;     // Copia size, file e line dell'allocazione prima di rimuoverla
 
         m_Allocations.erase(it);     // rimuove il puntatore dalla mappa
 
@@ -47,7 +46,10 @@ namespace MM
         // info --> informazioni dell'allocazione
         for (const auto& [ptr, info ] : m_Allocations)
         {
-            std::cout << "-- Address: " << ptr << " | Size : " << info.size << " bytes | Location: " << info.file << " : " << info.line << std::endl;
+            std::cout << "-- Address: " << ptr 
+                      << " | Size : " << info.size << " bytes"
+                      << " | Location: " << info.file 
+                      << " : " << info.line << std::endl;
         }
 
     }
