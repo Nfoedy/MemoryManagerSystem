@@ -70,14 +70,15 @@ namespace MM
             return nullptr;
         }
 
+        
+        g_TotalAllocated += size; // Aggiorna la memoria totale allocata
+        g_CurrentAllocated += size; // Aggiorna la memoria attualmente allocata
+        g_AllocationCount++; // Incrementa il contatore delle allocazioni
+
+        g_MemoryTracker.Register(ptr,size,file,line);   // Registra l'allocazione nel MemoryTracker
+
         if(shouldLog)
         {
-            g_TotalAllocated += size; // Aggiorna la memoria totale allocata
-            g_CurrentAllocated += size; // Aggiorna la memoria attualmente allocata
-            g_AllocationCount++; // Incrementa il contatore delle allocazioni
-
-            g_MemoryTracker.Register(ptr,size,file,line);   // Registra l'allocazione nel MemoryTracker
-
             // Log debug con nome dell'allocatore usato, dimensione, indirizzo e posizione nel codice
             std::cout << "[MM][" << GetAllocatorName(isSmallAllocation) << "] Allocated " << size << " bytes | Address : " << ptr << " | Location : "
             << file << " : " << line << std::endl; 
