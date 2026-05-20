@@ -48,15 +48,49 @@ Il sistema è composto dai seguenti moduli:
 
 ## Output di test
 
--- mettere screen -- 
+Il progetto include test dimostrativi per verificare il corretto funzionamento del MemoryManager.
 
-Il seguente test mostra:
+### Test API del MemoryManager
 
-- allocazioni piccole gestite da SOBA;
-- allocazioni grandi gestite dal GeneralAllocator;
-- corretta deallocazione;
-- statistiche finali;
+Questo test utilizza le macro `MM_MALLOC`, `MM_FREE`, `MM_NEW` e `MM_DELETE`.
+
+Il test mostra:
+
+- allocazioni piccole gestite da `SOBA`;
+- allocazioni grandi gestite dal `GeneralAllocator`;
+- corretta deallocazione della memoria;
+- statistiche finali coerenti;
 - nessun memory leak rilevato.
+
+![Memory Manager API Test](docs/images/memory_manager_api_test.png)
+
+### Test global new/delete override
+
+Il MemoryManager supporta opzionalmente l’override globale di `new`, `delete`, `new[]` e `delete[]` tramite la macro di compilazione `USE_MM_GLOBAL_OVERRIDES`.
+
+Questo test mostra che una normale allocazione con `new/delete` può essere intercettata dal MemoryManager quando l’override è abilitato.
+
+![Global Override Test](docs/images/global_override_test.png)
+
+
+## Stress Tests
+
+Il progetto include alcuni test pattern pensati per verificare il comportamento del MemoryManager in scenari diversi di allocazione e deallocazione.
+
+I test si trovano nella cartella `tests/` e vengono eseguiti dal file `main.cpp`.
+
+- `SameTest.h`: esegue più allocazioni della stessa dimensione per stressare una singola size class.
+- `BulkTest.h`: esegue più allocazioni consecutive seguite da deallocazioni nello stesso ordine.
+- `ReverseTest.h`: esegue deallocazioni in ordine inverso rispetto alle allocazioni.
+- `ButterflyTest.h`: esegue deallocazioni alternate dall’inizio e dalla fine verso il centro.
+
+Questi test servono a verificare che:
+
+- lo SmallObjectAllocator gestisca correttamente allocazioni piccole;
+- il GeneralAllocator venga usato per allocazioni più grandi;
+- il MemoryTracker registri e rimuova correttamente le allocazioni;
+- il sistema non lasci blocchi attivi dopo le deallocazioni;
+- la free list funzioni anche con pattern di deallocazione non lineari.
 
 
 
