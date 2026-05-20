@@ -96,7 +96,7 @@ Il test mostra:
 - statistiche finali coerenti;
 - nessun memory leak rilevato.
 
-![Memory Manager API Test](docs/images/memory_manager_api_test.png)
+![Memory Manager API Test](docs/Screen1.png)
 
 ### Test global new/delete override
 
@@ -104,7 +104,7 @@ Il MemoryManager supporta opzionalmente l’override globale di `new`, `delete`,
 
 Questo test mostra che una normale allocazione con `new/delete` può essere intercettata dal MemoryManager quando l’override è abilitato.
 
-![Global Override Test](docs/images/global_override_test.png)
+![Global Override Test](docs/Screen2.png)
 
 
 ## Stress Tests
