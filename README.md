@@ -2,6 +2,40 @@
 Sistema di gestione della memoria sviluppato in C++, focalizzato su allocazione personalizzata, tracking delle allocazioni, rilevamento dei memory leak e gestione efficiente di piccoli oggetti.
 
 
+## Struttura del progetto
+
+```text
+MemoryManagerSystem/
+├── include/
+│   └── MemoryManager/
+│       ├── Chunk.h
+│       ├── FixedAllocator.h
+│       ├── GeneralAllocator.h
+│       ├── MemoryManager.h
+│       ├── MemoryTracker.h
+│       └── SmallObjectAllocator.h
+│
+├── src/
+│   ├── Chunk.cpp
+│   ├── FixedAllocator.cpp
+│   ├── GeneralAllocator.cpp
+│   ├── MemoryManager.cpp
+│   ├── MemoryOverrides.cpp
+│   ├── MemoryTracker.cpp
+│   └── SmallObjectAllocator.cpp
+│
+├── tests/
+│   ├── SameTest.h
+│   ├── BulkTest.h
+│   ├── ReverseTest.h
+│   └── ButterflyTest.h
+│
+├── main.cpp
+├── README.md
+└── .gitignore
+
+
+
 ## Descrizione
 
 Memory Manager System è un progetto C++ sviluppato per implementare un sistema personalizzato di gestione della memoria.
