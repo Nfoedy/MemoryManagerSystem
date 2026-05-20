@@ -163,7 +163,7 @@ namespace MM
 
     void PrintStats()
     {
-        std::cout << "\n========= MEMORY MANAGER STATS =========\n";
+        std::cout << "\n========== MEMORY MANAGER STATS ==========\n";
         std::cout << "Total Allocated: " << g_TotalAllocated << " bytes" << std::endl;          // Stampa la memoria totale allocata
         std::cout << "Current Allocated: " << g_CurrentAllocated << " bytes" << std::endl;      // Stampa la memoria attualmente allocata
         std::cout << "Allocation Count: " << g_AllocationCount << std::endl;                    // Stampa il numero di allocazioni
@@ -176,9 +176,9 @@ namespace MM
     void DumpLeaks()
     {
         // Stampa tutte le allocazioni anocra attive nel MemoryTracker
-        std::cout << "\n========= MEMORY LEAK REPORT =========\n";   
+        std::cout << "\n=========== MEMORY LEAK REPORT ===========\n";   
         g_MemoryTracker.PrintLeaks();
-        std::cout << "===============================" << std::endl; 
+        std::cout << "==========================================\n" << std::endl; 
     }
 
 }
