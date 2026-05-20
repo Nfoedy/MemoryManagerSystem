@@ -2,6 +2,8 @@
 Sistema di gestione della memoria sviluppato in C++, focalizzato su allocazione personalizzata, tracking delle allocazioni, rilevamento dei memory leak e gestione efficiente di piccoli oggetti.
 
 
+
+
 ## Struttura del progetto
 
 ```text
@@ -36,11 +38,15 @@ MemoryManagerSystem/
 ```
 
 
+
+
 ## Descrizione
 
 Memory Manager System è un progetto C++ sviluppato per implementare un sistema personalizzato di gestione della memoria.
 
 Il progetto fornisce funzioni e macro per allocare e liberare memoria, tracciare le allocazioni attive, rilevare possibili memory leak e distinguere tra allocazioni piccole e allocazioni generali.
+
+
 
 
 ## Obiettivi del progetto
@@ -55,6 +61,8 @@ L’obiettivo del progetto è implementare i concetti fondamentali della gestion
 - override opzionale degli operatori globali `new` e `delete`.
 
 
+
+
 ## Funzionalità principali
 
 - API custom tramite `MM_MALLOC`, `MM_FREE`, `MM_NEW` e `MM_DELETE`;
@@ -65,6 +73,8 @@ L’obiettivo del progetto è implementare i concetti fondamentali della gestion
 - report dei memory leak;
 - supporto opzionale per global `new/delete` override;
 - struttura ispirata al modello Chunk / FixedAllocator / SmallObjectAllocator.
+
+
 
 
 ## Architettura del sistema
@@ -78,6 +88,8 @@ Il sistema è composto dai seguenti moduli:
 - `GeneralAllocator`: allocator fallback per allocazioni più grandi.
 - `MemoryTracker`: registra le allocazioni attive e rileva eventuali leak.
 - `MemoryOverrides`: permette opzionalmente di intercettare `new`, `delete`, `new[]` e `delete[]`.
+
+
 
 
 ## Output di test
@@ -107,6 +119,8 @@ Questo test mostra che una normale allocazione con `new/delete` può essere inte
 <img src="docs/Screen2.png" alt="Global Override Test" width="500">
 
 
+
+
 ## Stress Tests
 
 Il progetto include alcuni test pattern pensati per verificare il comportamento del MemoryManager in scenari diversi di allocazione e deallocazione.
@@ -128,6 +142,7 @@ Questi test servono a verificare che:
 
 
 
+
 ## Limitazioni attuali
 
 - Il `GeneralAllocator` è attualmente un wrapper su `malloc/free`.
@@ -135,6 +150,8 @@ Questi test servono a verificare che:
 - Non è ancora presente un allocator compatibile con STL.
 - Il supporto agli array custom tramite macro dedicate non è ancora implementato.
 - Il global override può intercettare anche allocazioni interne di STL/runtime, quindi va usato con attenzione.
+
+
 
 
 ## Sviluppi futuri
