@@ -91,6 +91,26 @@ Il sistema è composto dai seguenti moduli:
 
 
 
+## Compilazione ed esecuzione
+
+### Modalità normale
+
+Questa modalità utilizza le API esplicite del MemoryManager, come `MM_MALLOC`, `MM_FREE`, `MM_NEW` e `MM_DELETE`.
+
+```powershell
+g++ -std=c++17 src/Chunk.cpp src/FixedAllocator.cpp src/SmallObjectAllocator.cpp src/GeneralAllocator.cpp src/MemoryTracker.cpp src/MemoryManager.cpp src/MemoryOverrides.cpp main.cpp -Iinclude -o test.exe
+.\test.exe
+```
+
+### Modalità con global new/delete override
+
+Questa modalità abilita l’intercettazione opzionale degli operatori globali `new`, `delete`, `new[]` e `delete[]`.
+
+```powershell
+g++ -std=c++17 -DUSE_MM_GLOBAL_OVERRIDES src/Chunk.cpp src/FixedAllocator.cpp src/SmallObjectAllocator.cpp src/GeneralAllocator.cpp src/MemoryTracker.cpp src/MemoryManager.cpp src/MemoryOverrides.cpp main.cpp -Iinclude -o test.exe
+.\test.exe
+```
+
 
 ## Output di test
 
